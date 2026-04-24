@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>StudyFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --sf-bg:#F7F6F2;
+  --sf-card:#FFFFFF;
+  --sf-border:rgba(0,0,0,0.08);
+  --sf-text:#1A1A18;
+  --sf-muted:#888780;
+  --sf-accent:#7F77DD;
+  --sf-accent-bg:#EEEDFE;
+  --sf-accent-text:#3C3489;
+  --sf-high:#E24B4A;
+  --sf-high-bg:#FCEBEB;
+  --sf-med:#BA7517;
+  --sf-med-bg:#FAEEDA;
+  --sf-low:#3B6D11;
+  --sf-low-bg:#EAF3DE;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--sf-bg);color:var(--sf-text);min-height:100vh;font-size:14px}
+h1,h2,h3{font-family:'Syne',sans-serif;font-weight:700}
+.app{display:grid;grid-template-rows:auto 1fr;min-height:100vh}
+.topbar{background:var(--sf-card);border-bottom:0.5px solid var(--sf-border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--sf-accent)}
+.today-badge{background:var(--sf-accent-bg);color:var(--sf-accent-text);font-size:12px;font-weight:500;padding:4px 10px;border-radius:20px}
+.main{display:grid;grid-template-columns:260px 1fr;height:calc(100vh - 49px);overflow:hidden}
+.sidebar{background:var(--sf-card);border-right:0.5px solid var(--sf-border);padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+.sidebar-title{font-size:11px;font-weight:500;color:var(--sf-muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.subject-list{display:flex;flex-direction:column;gap:4px}
+.subject-pill{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;border:none;width:100%;text-align:left;background:transparent;color:var(--sf-text)}
+.subject-pill:hover{background:var(--sf-bg)}
+.subject-pill.active{background:var(--sf-accent-bg);color:var(--sf-accent-text)}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.count-badge{margin-left:auto;background:var(--sf-bg);color:var(--sf-muted);font-size:11px;padding:2px 7px;border-radius:10px}
+.content{padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:20px}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat-card{background:var(--sf-card);border:0.5px solid var(--sf-border);border-radius:10px;padding:12px 14px}
+.stat-label{font-size:11px;color:var(--sf-muted);margin-bottom:4px;font-weight:500}
+.stat-val{font-size:22px;font-weight:700;font-family:'Syne',sans-serif}
+.stat-val.high{color:var(--sf-high)}
+.stat-val.med{color:var(--sf-med)}
+.stat-val.done{color:var(--sf-low)}
+.section-header{display:flex;align-items:center;justify-content:space-between}
+.section-label{font-size:15px;font-weight:700;font-family:'Syne',sans-serif}
+.add-btn{background:var(--sf-accent);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.add-btn:hover{opacity:.88}
+.add-btn:active{opacity:.75}
+.task-form{background:var(--sf-card);border:0.5px solid var(--sf-accent);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.form-input{font-family:'DM Sans',sans-serif;font-size:13px;background:var(--sf-bg);border:0.5px solid var(--sf-border);border-radius:8px;padding:8px 10px;color:var(--sf-text);outline:none;width:100%}
+.form-input:focus{border-color:var(--sf-accent)}
+select.form-input{cursor:pointer}
+.form-actions{display:flex;gap:8px;justify-content:flex-end}
+.cancel-btn{background:transparent;border:0.5px solid var(--sf-border);border-radius:8px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--sf-muted)}
+.cancel-btn:hover{background:var(--sf-bg)}
+.task-list{display:flex;flex-direction:column;gap:8px}
+.task-card{background:var(--sf-card);border:0.5px solid var(--sf-border);border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px;transition:border-color .15s}
+.task-card:hover{border-color:rgba(127,119,221,.3)}
+.task-card.done-card{opacity:.55}
+.checkbox{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--sf-border);cursor:pointer;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s}
+.checkbox.checked{background:var(--sf-accent);border-color:var(--sf-accent)}
+.checkmark{width:10px;height:10px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.task-body{flex:1;min-width:0}
+.task-title{font-size:14px;font-weight:500;margin-bottom:4px;line-height:1.3}
+.task-title.striked{text-decoration:line-through;color:var(--sf-muted)}
+.task-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tag{font-size:11px;font-weight:500;padding:3px 8px;border-radius:20px}
+.prio-high{background:var(--sf-high-bg);color:var(--sf-high)}
+.prio-med{background:var(--sf-med-bg);color:var(--sf-med)}
+.prio-low{background:var(--sf-low-bg);color:var(--sf-low)}
+.deadline-tag{font-size:11px;color:var(--sf-muted);display:flex;align-items:center;gap:3px}
+.overdue{color:var(--sf-high);font-weight:500}
+.delete-btn{background:transparent;border:none;cursor:pointer;color:var(--sf-muted);font-size:16px;padding:2px 4px;border-radius:4px;line-height:1;flex-shrink:0}
+.delete-btn:hover{color:var(--sf-high);background:var(--sf-high-bg)}
+.plan-section{background:var(--sf-card);border:0.5px solid var(--sf-border);border-radius:12px;padding:16px}
+.plan-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:12px;color:var(--sf-accent-text)}
+.plan-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--sf-border)}
+.plan-item:last-child{border-bottom:none;padding-bottom:0}
+.plan-time{font-size:12px;font-weight:500;color:var(--sf-muted);min-width:50px}
+.plan-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.empty-state{text-align:center;padding:32px;color:var(--sf-muted);font-size:13px}
+.filter-row{display:flex;gap:6px;flex-wrap:wrap}
+.filter-btn{background:var(--sf-card);border:0.5px solid var(--sf-border);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--sf-muted);transition:all .15s}
+.filter-btn.active{background:var(--sf-accent-bg);color:var(--sf-accent-text);border-color:var(--sf-accent)}
+.streak-bar{background:var(--sf-card);border:0.5px solid var(--sf-border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:16px}
+.streak-num{font-family:'Syne',sans-serif;font-size:28px;font-weight:700;color:var(--sf-med)}
+.streak-days{display:flex;gap:4px}
+.streak-day{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;background:var(--sf-bg);color:var(--sf-muted)}
+.streak-day.on{background:var(--sf-med-bg);color:var(--sf-med)}
+.progress-bar{height:5px;border-radius:3px;background:var(--sf-bg);overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:3px;background:var(--sf-accent);transition:width .4s ease}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="logo">StudyFlow</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="today-badge" id="today-badge"></div>
+      <div style="width:30px;height:30px;border-radius:50%;background:var(--sf-accent-bg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--sf-accent-text)">SF</div>
+    </div>
+  </div>
+  <div class="main">
+    <div class="sidebar">
+      <div>
+        <div class="sidebar-title">Materias</div>
+        <div class="subject-list" id="subject-list"></div>
+      </div>
+      <div>
+        <div class="sidebar-title">Mi racha</div>
+        <div class="streak-bar">
+          <div>
+            <div class="streak-num" id="streak-num">0</div>
+            <div style="font-size:11px;color:var(--sf-muted);font-weight:500">días seguidos</div>
+          </div>
+          <div class="streak-days" id="streak-days"></div>
+        </div>
+      </div>
+      <div>
+        <div class="sidebar-title">Progreso hoy</div>
+        <div style="background:var(--sf-card);border:0.5px solid var(--sf-border);border-radius:10px;padding:12px 14px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font-size:12px;color:var(--sf-muted)">Tareas completadas</span>
+            <span style="font-size:12px;font-weight:500" id="progress-label">0/0</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="stats-row" id="stats-row"></div>
+
+      <div class="streak-bar" id="plan-container" style="flex-direction:column;align-items:flex-start;gap:0">
+        <div class="plan-title">Plan de hoy — generado automáticamente</div>
+        <div style="width:100%" id="daily-plan"></div>
+      </div>
+
+      <div>
+        <div class="section-header" style="margin-bottom:12px">
+          <div class="section-label">Mis tareas</div>
+          <button class="add-btn" id="add-btn">+ Nueva tarea</button>
+        </div>
+        <div class="filter-row" style="margin-bottom:12px" id="filter-row"></div>
+        <div id="add-form" style="display:none;margin-bottom:12px"></div>
+        <div class="task-list" id="task-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUBJECTS=[
+  {id:'math',name:'Matemáticas',color:'#7F77DD'},
+  {id:'spanish',name:'Español',color:'#D85A30'},
+  {id:'science',name:'Ciencias',color:'#1D9E75'},
+  {id:'history',name:'Historia',color:'#BA7517'},
+  {id:'english',name:'Inglés',color:'#378ADD'},
+];
+
+let tasks=[
+  {id:1,title:'Resolver ejercicios pp. 45-50',subject:'math',priority:'high',deadline:'2025-04-18',done:false},
+  {id:2,title:'Leer capítulo 3 — La Revolución',subject:'history',priority:'high',deadline:'2025-04-18',done:false},
+  {id:3,title:'Redacción: borrador ensayo',subject:'spanish',priority:'med',deadline:'2025-04-20',done:true},
+  {id:4,title:'Lab reporte — célula vegetal',subject:'science',priority:'med',deadline:'2025-04-21',done:false},
+  {id:5,title:'Vocabulary unit 5 quiz prep',subject:'english',priority:'low',deadline:'2025-04-22',done:false},
+  {id:6,title:'Ecuaciones cuadráticas — práctica',subject:'math',priority:'low',deadline:'2025-04-23',done:false},
+];
+
+let nextId=7;
+let activeSubject='all';
+let activeFilter='all';
+let streak=4;
+
+function fmtDate(d){
+  if(!d)return null;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const dt=new Date(d+'T00:00:00'); dt.setHours(0,0,0,0);
+  const diff=Math.round((dt-today)/(1000*60*60*24));
+  if(diff<0)return{label:`Vencida hace ${Math.abs(diff)}d`,over:true};
+  if(diff===0)return{label:'Hoy',over:false};
+  if(diff===1)return{label:'Mañana',over:false};
+  return{label:dt.toLocaleDateString('es-MX',{month:'short',day:'numeric'}),over:false};
+}
+
+function getSubject(id){return SUBJECTS.find(s=>s.id===id)||{name:id,color:'#888780'};}
+
+function renderTopBar(){
+  const d=new Date();
+  document.getElementById('today-badge').textContent=d.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long'});
+}
+
+function renderSidebar(){
+  const sl=document.getElementById('subject-list');
+  sl.innerHTML='';
+  const all={id:'all',name:'Todas las materias',color:'#888780'};
+  [all,...SUBJECTS].forEach(s=>{
+    const count=tasks.filter(t=>(s.id==='all'||t.subject===s.id)&&!t.done).length;
+    const btn=document.createElement('button');
+    btn.className='subject-pill'+(activeSubject===s.id?' active':'');
+    btn.innerHTML=`<span class="dot" style="background:${s.color}"></span><span>${s.name}</span><span class="count-badge">${count}</span>`;
+    btn.onclick=()=>{activeSubject=s.id;render();};
+    sl.appendChild(btn);
+  });
+}
+
+function renderStreak(){
+  document.getElementById('streak-num').textContent=streak;
+  const days=['L','M','M','J','V','S','D'];
+  const today=new Date().getDay();
+  const sd=document.getElementById('streak-days');
+  sd.innerHTML='';
+  days.forEach((d,i)=>{
+    const idx=today===0?6:today-1;
+    const on=i<=idx&&i>=(idx-streak+1);
+    const el=document.createElement('div');
+    el.className='streak-day'+(on?' on':'');
+    el.textContent=d;
+    sd.appendChild(el);
+  });
+}
+
+function renderStats(){
+  const total=tasks.length;
+  const done=tasks.filter(t=>t.done).length;
+  const high=tasks.filter(t=>t.priority==='high'&&!t.done).length;
+  const overdue=tasks.filter(t=>{
+    if(!t.deadline||t.done)return false;
+    const dt=new Date(t.deadline+'T00:00:00');
+    const today=new Date(); today.setHours(0,0,0,0);
+    return dt<today;
+  }).length;
+  document.getElementById('stats-row').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total tareas</div><div class="stat-val">${total}</div></div>
+    <div class="stat-card"><div class="stat-label">Completadas</div><div class="stat-val done">${done}</div></div>
+    <div class="stat-card"><div class="stat-label">Prioridad alta</div><div class="stat-val high">${high}</div></div>
+    <div class="stat-card"><div class="stat-label">Vencidas</div><div class="stat-val" style="color:var(--sf-med)">${overdue}</div></div>
+  `;
+  document.getElementById('progress-label').textContent=`${done}/${total}`;
+  document.getElementById('progress-fill').style.width=total>0?Math.round(done/total*100)+'%':'0%';
+}
+
+function renderDailyPlan(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const todayTasks=tasks.filter(t=>{
+    if(t.done)return false;
+    const dt=new Date((t.deadline||'2099-12-31')+'T00:00:00');
+    return dt<=new Date(today.getTime()+2*86400000);
+  }).sort((a,b)=>{
+    const po={high:0,med:1,low:2};
+    return (po[a.priority]||2)-(po[b.priority]||2);
+  }).slice(0,5);
+
+  const dp=document.getElementById('daily-plan');
+  if(todayTasks.length===0){dp.innerHTML='<div class="empty-state">No hay tareas urgentes hoy</div>';return;}
+  const times=['8:00','9:30','11:00','13:00','15:00'];
+  dp.innerHTML=todayTasks.map((t,i)=>{
+    const s=getSubject(t.subject);
+    return`<div class="plan-item">
+      <span class="plan-time">${times[i]||'—'}</span>
+      <span class="plan-dot" style="background:${s.color}"></span>
+      <span style="flex:1;font-size:13px">${t.title}</span>
+      <span class="tag prio-${t.priority}">${t.priority==='high'?'Alta':t.priority==='med'?'Media':'Baja'}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderFilters(){
+  const filters=[
+    {id:'all',label:'Todas'},
+    {id:'high',label:'Alta prioridad'},
+    {id:'med',label:'Media'},
+    {id:'low',label:'Baja'},
+    {id:'done',label:'Completadas'},
+    {id:'overdue',label:'Vencidas'},
+  ];
+  document.getElementById('filter-row').innerHTML=filters.map(f=>
+    `<button class="filter-btn${activeFilter===f.id?' active':''}" onclick="setFilter('${f.id}')">${f.label}</button>`
+  ).join('');
+}
+
+function setFilter(f){activeFilter=f;render();}
+
+function renderTasks(){
+  const tl=document.getElementById('task-list');
+  let filtered=tasks.filter(t=>activeSubject==='all'||t.subject===activeSubject);
+  if(activeFilter==='high')filtered=filtered.filter(t=>t.priority==='high'&&!t.done);
+  else if(activeFilter==='med')filtered=filtered.filter(t=>t.priority==='med'&&!t.done);
+  else if(activeFilter==='low')filtered=filtered.filter(t=>t.priority==='low'&&!t.done);
+  else if(activeFilter==='done')filtered=filtered.filter(t=>t.done);
+  else if(activeFilter==='overdue')filtered=filtered.filter(t=>{
+    if(!t.deadline||t.done)return false;
+    const dt=new Date(t.deadline+'T00:00:00');
+    const today=new Date(); today.setHours(0,0,0,0);
+    return dt<today;
+  });
+  else filtered=[...filtered.filter(t=>!t.done),...filtered.filter(t=>t.done)];
+
+  if(filtered.length===0){tl.innerHTML='<div class="empty-state">No hay tareas aquí todavía</div>';return;}
+  tl.innerHTML=filtered.map(t=>{
+    const s=getSubject(t.subject);
+    const dl=fmtDate(t.deadline);
+    return`<div class="task-card${t.done?' done-card':''}">
+      <div class="checkbox${t.done?' checked':''}" onclick="toggleDone(${t.id})">
+        ${t.done?`<svg class="checkmark" viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>`:''}
+      </div>
+      <div class="task-body">
+        <div class="task-title${t.done?' striked':''}">${t.title}</div>
+        <div class="task-meta">
+          <span class="tag" style="background:${s.color}18;color:${s.color}">${s.name}</span>
+          <span class="tag prio-${t.priority}">${t.priority==='high'?'Alta':t.priority==='med'?'Media':'Baja'}</span>
+          ${dl?`<span class="deadline-tag${dl.over?' overdue':''}">&#128197; ${dl.label}</span>`:''}
+        </div>
+      </div>
+      <button class="delete-btn" onclick="deleteTask(${t.id})">&#10005;</button>
+    </div>`;
+  }).join('');
+}
+
+function toggleDone(id){
+  const t=tasks.find(t=>t.id===id);
+  if(t){t.done=!t.done;if(t.done)streak=Math.min(streak+1,7);render();}
+}
+
+function deleteTask(id){tasks=tasks.filter(t=>t.id!==id);render();}
+
+function showAddForm(){
+  const form=document.getElementById('add-form');
+  form.style.display='block';
+  form.innerHTML=`
+    <div class="task-form">
+      <input class="form-input" id="f-title" placeholder="Nombre de la tarea..." style="width:100%"/>
+      <div class="form-row">
+        <select class="form-input" id="f-subject">
+          ${SUBJECTS.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}
+        </select>
+        <select class="form-input" id="f-priority">
+          <option value="high">Alta prioridad</option>
+          <option value="med" selected>Media</option>
+          <option value="low">Baja</option>
+        </select>
+        <input class="form-input" id="f-deadline" type="date"/>
+      </div>
+      <div class="form-actions">
+        <button class="cancel-btn" onclick="hideForm()">Cancelar</button>
+        <button class="add-btn" onclick="saveTask()">Guardar tarea</button>
+      </div>
+    </div>`;
+  document.getElementById('f-title').focus();
+}
+
+function hideForm(){document.getElementById('add-form').style.display='none';}
+
+function saveTask(){
+  const title=document.getElementById('f-title').value.trim();
+  if(!title)return;
+  tasks.unshift({
+    id:nextId++,
+    title,
+    subject:document.getElementById('f-subject').value,
+    priority:document.getElementById('f-priority').value,
+    deadline:document.getElementById('f-deadline').value||null,
+    done:false
+  });
+  hideForm();
+  render();
+}
+
+document.getElementById('add-btn').onclick=showAddForm;
+
+function render(){
+  renderTopBar();
+  renderSidebar();
+  renderStreak();
+  renderStats();
+  renderDailyPlan();
+  renderFilters();
+  renderTasks();
+}
+
+render();
+</script>
+</body>
+</html>
